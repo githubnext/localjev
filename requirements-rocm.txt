@@ -1,0 +1,5 @@
+# Install into an environment that already exposes a working ROCm PyTorch.
+# Deliberately omit torch: PyPI's default wheel must not replace the HIP build.
+transformers==5.11.0
+accelerate>=1.10,<2
+Pillow>=11,<13

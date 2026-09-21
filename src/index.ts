@@ -7,15 +7,29 @@ export { Engine } from "./engine";
 export { LocalJevApp } from "./server";
 export * from "./types";
 
+export function serveLocalJev(app: LocalJevApp, idleTimeout = 255) {
+  return Bun.serve({
+    hostname: app.settings.host,
+    port: app.settings.port,
+    idleTimeout,
+    fetch(request, server) {
+      if (
+        request.method === "POST" &&
+        new URL(request.url).pathname === "/v1/systemone"
+      ) {
+        // Inference and validation retries can exceed Bun's idle timeout.
+        // The engine enforces the configured timeout on each upstream call.
+        server.timeout(request, 0);
+      }
+      return app.fetch(request);
+    },
+  });
+}
+
 if (import.meta.main) {
   const settings = loadSettings();
   const app = new LocalJevApp(settings, new Engine(settings));
-  const server = Bun.serve({
-    hostname: settings.host,
-    port: settings.port,
-    idleTimeout: 255,
-    fetch: (request) => app.fetch(request),
-  });
+  const server = serveLocalJev(app);
 
   console.log(`LocalJev listening on ${server.url}`);
 

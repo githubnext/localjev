@@ -4,12 +4,16 @@
   "description": "A Jev-compatible System One API backed by a local OpenAI-compatible model",
   "type": "module",
   "private": true,
+  "engines": {
+    "bun": ">=1.4.2"
+  },
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun --watch run src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "smoke": "bun run scripts/live-smoke.ts",
+    "smoke:http": "bun run scripts/http-smoke.ts",
     "eval": "bun run scripts/eval/run.ts",
     "eval:report": "bun run scripts/eval/report.ts"
   },

@@ -7,3 +7,7 @@ eval/runs/
 .DS_Store
 coverage/
 dist/
+.venv-rocm/
+.runtime/
+__pycache__/
+*.pyc

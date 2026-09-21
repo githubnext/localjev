@@ -4,7 +4,12 @@ A local, Jev-compatible `POST /v1/systemone` API written in TypeScript for
 [Bun](https://bun.sh/), backed by DiffusionGemma through an OpenAI-compatible
 Chat Completions endpoint.
 
-The defaults target:
+An optional **Windows / AMD ROCm backend**, tested on Radeon 8060S (gfx1151),
+runs the original DiffusionGemma checkpoint in FP16 with PyTorch and
+Transformers. See [the ROCm guide](docs/gfx1151.md) for setup, the PowerShell
+launcher and an end-to-end HTTP smoke check.
+
+The oMLX defaults target:
 
 - inference server: `http://127.0.0.1:8000`
 - model: `diffusiongemma-26B-A4B-it-4bit`
@@ -35,7 +40,7 @@ them for consequential decisions.
 
 ## Run with oMLX
 
-Requires Bun 1.2+ and a running oMLX server.
+Requires Bun 1.4.2+ (for the checked-in lockfile) and a running oMLX server.
 
 ```sh
 bun install
@@ -158,6 +163,7 @@ bun install
 bun test
 bun run typecheck
 bun run smoke       # live call to the configured inference server
+bun run smoke:http  # /ready and all three decision types through LocalJev HTTP
 ```
 
 ## Evaluate different models
@@ -196,7 +202,8 @@ and
 [`lmstudio-ai/lmstudio-bug-tracker#2037`](https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/2037).
 The reported MLX backend fails to load `diffusion_gemma`, while the normal llama.cpp
 backend reports an unknown architecture. oMLX already loads and serves your exact
-checkpoint successfully, so it is the better runner for this Mac today.
+checkpoint successfully in the Mac setup. For Windows gfx1151, see the
+[optional ROCm backend](docs/gfx1151.md).
 
 Even after LM Studio adds ordinary generation support, changing runners alone will
 not make the result OpenJev-equivalent. The runner must expose seeded diffusion
