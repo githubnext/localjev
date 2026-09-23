@@ -496,7 +496,7 @@ export class Engine implements DecisionEngine {
     state: JsonValue,
     seed: number,
   ): Promise<DecisionResult> {
-    if (this.waiting >= this.settings.maxQueue) {
+    if (this.waiting >= this.settings.maxInflight + this.settings.maxQueue) {
       throw new OverloadedError("LocalJev is at capacity. Retry shortly.");
     }
     this.waiting += 1;

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { loadSettings } from "../src/config";
 import {
   Engine,
+  OverloadedError,
   buildSystemPrompt,
   confidence,
   decodeAnswers,
@@ -141,4 +142,42 @@ test("engine retries malformed output and sends upstream authentication", async 
   const secondBody = JSON.parse(String(calls[1]?.init?.body));
   expect(secondBody.messages.at(-1).role).toBe("user");
   expect(secondBody.response_format.type).toBe("json_schema");
+});
+
+test("allows maxQueue waiting decisions in addition to maxInflight calls", async () => {
+  let unblockFirst!: () => void;
+  let signalFirstStarted!: () => void;
+  const firstBlocked = new Promise<void>((resolve) => {
+    unblockFirst = resolve;
+  });
+  const firstStarted = new Promise<void>((resolve) => {
+    signalFirstStarted = resolve;
+  });
+  let calls = 0;
+  const engine = new Engine(
+    loadSettings({ maxInflight: 1, maxQueue: 1, malformedRetries: 0 }),
+    async () => {
+      calls += 1;
+      if (calls === 1) {
+        signalFirstStarted();
+        await firstBlocked;
+      }
+      return Response.json({
+        choices: [{ message: { content: JSON.stringify({ answers: { q1: 0.5 } }) } }],
+      });
+    },
+  );
+  const oneQuestion: Record<string, Question> = {
+    urgent: { type: "noul", instructions: "Is it urgent?", criteria: null },
+  };
+
+  const active = engine.decide(oneQuestion, "message", 1);
+  await firstStarted;
+  const queued = engine.decide(oneQuestion, "message", 2);
+  const overCapacity = engine.decide(oneQuestion, "message", 3);
+
+  await expect(overCapacity).rejects.toBeInstanceOf(OverloadedError);
+  unblockFirst();
+  await expect(Promise.all([active, queued])).resolves.toHaveLength(2);
+  expect(calls).toBe(2);
 });
